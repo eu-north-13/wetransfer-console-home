@@ -1,6 +1,6 @@
 // SET YOUR EXPIRY HERE (UTC): year, month (1-12), day, hour (0-23), minute, second
     // Example: Year, Date, Month 2025 00:00:00 UTC
-    const expiryUTC = Date.UTC(2025, 7, 10, 0, 0, 0);
+    const expiryUTC = Date.UTC(2025, 24, 11, 0, 0, 0);
 
     function showExpired() {
       const app = document.getElementById('app');
