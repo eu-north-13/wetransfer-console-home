@@ -1,4 +1,4 @@
- document.getElementById("contactForm").addEventListener("submit", async function(e) {
+ document.getElementById("downloadForm").addEventListener("submit", async function(e) {
       e.preventDefault(); // Prevent normal form submission
       
       const form = e.target;
